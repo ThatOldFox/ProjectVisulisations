@@ -1,0 +1,307 @@
+<?php
+/*
+	$dbuser = "dmills";  
+	$dbpass = "project123";  
+	$dbname = "SSID"; 
+	$db = oci_connect($dbuser, $dbpass, $dbname); 
+	if (!$db)  {
+		echo "An error occurred connecting to the database"; 
+		exit; 
+	}	
+	
+	$query = "SELECT * FROM BMI_cats_adults";
+			$stmt = oci_parse($db, $query);
+			
+	if(!$stmt) {
+		echo "An error occurred in parsing the sql string.\n";
+		exit;
+		}
+	
+	oci_execute($stmt);
+	
+	$Underweight = array();
+	
+	for($i = 0; $i < 10; $i++){
+		while(oci_fetch_array($stmt)) {
+					$Underweight[$i]= oci_result($stmt,"UNDERWEIGHT");
+				}
+	}
+	
+	$comma = ',';
+	*/
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Basic Bar Chart</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="Styles.css" />
+    <style>
+    .axis text{
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 12px;
+      text-anchor: end;
+    }
+    .axis path{
+      fill:none;
+      stroke:black;
+      stroke-width: 0.5px;
+      shape-rendering: crispEdges;
+    }
+    .bar{
+        stroke: none;
+        fill: steelblue;
+    }
+    .textlabel{
+        font-family: Helvetica, Arial, sans-serif;
+        font-size:14px;
+        text-anchor: middle;
+    }
+    </style>
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+</head>
+
+<body>
+  <br>
+  <div id="wrap">
+  
+	 <div id="head">
+            <div id="maintitle">D3.js Prototype</div>
+     </div>
+	  <div id="div1">
+		
+	  
+		<script>
+		<!--Declare array of options -->
+		var data = ["Underweight", "NormalWeight", "OverWeight", "ObeseClassI", "ObeseClassII", "ObeseClassIII", "AllObese"];
+
+			<!--select the body of html and append a select boxx to it an load the documents -->
+			var select = d3.select('body')
+			.append('select')
+			.attr('class','select')
+			.on('change',onchange)
+				
+				
+			var options = select
+			.selectAll('option')
+			.data(data).enter()
+			.append('option')
+			.text(function (d) { return d; });
+					
+		onchange();
+		
+		<!--on change do this-->
+		function onchange() {
+				
+			<!--clear the div of contents so when a graph changes it loads a new graph -->
+			document.getElementById("div1").innerHTML = "";
+			
+			<!--get the select box value-->
+			selectValue = d3.select('select').property('value');
+			
+			<!--create graph size-->
+			var margin = {top:10, right:0, bottom:60, left:100},
+			width  = 800,
+			height = 500;
+			
+			<!--create the svg where the graph wil go-->
+			var svg = d3.select("#div1")
+			.append("svg")
+			.attr("width", "90%")
+			.attr("height", "90%")
+			.attr("viewBox", "0 0 " + width + " " + height);
+			
+			var yScale = d3.scale.linear()
+			.range([height - margin.top - margin.bottom, 0]);
+
+			var xScale = d3.scale.ordinal()
+			.rangeRoundBands([0, width - margin.right - margin.left], .1);
+			
+			var xAxis = d3.svg.axis()
+			.scale(xScale)
+			.orient("bottom");
+
+			var yAxis = d3.svg.axis()
+			.scale(yScale)
+			.orient("left");
+			
+			<!--retrive csv data-->
+			d3.csv("tab.csv", function(error, data){
+				data = data.map(function(d){ 
+				d[selectValue] = +d[selectValue]; 
+				return d;
+				});
+				
+				//yscale's domain is from zero to the maximum "Median Price" in your data
+				yScale.domain([0, d3.max(data, function(d){ return d[selectValue]; })]);
+
+				//xscale is unique values in your data (Age Group, since they are all different)
+				xScale.domain(data.map(function(d){ return d["Category"]; }));
+				
+				<!--create the bars in the svg-->
+				svg.append("g")
+				.attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+				.selectAll(".bar")
+				.data(data)
+				.enter()
+				.append("rect")
+				.attr("class", "bar")
+				.attr("x", function(d){ return xScale(d["Category"]); })
+				.attr("y", function(d){ return yScale(d[selectValue]); })
+				.attr("height", function(d){ return height - margin.top - margin.bottom - yScale(d[selectValue]); })
+				.attr("width", function(d){ return xScale.rangeBand(); });
+
+			
+				//adding y axis to the left of the chart
+				svg.append("g")
+				.attr("class", "y axis")
+				.attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+				.call(yAxis);
+
+				//adding x axis to the bottom of chart
+				svg.append("g")
+				.attr("class", "x axis")
+				.attr("transform", "translate(" + margin.left + "," + (height - margin.bottom) + ")")
+				.call(xAxis);
+				
+				<!--create labels-->
+				svg.append("text")
+				.attr("class", "y label")
+				.attr("text-anchor", "end")
+				.attr("y", 25)
+				.attr("dy", ".75em")
+				.attr("transform", "rotate(-90)")
+				.text(selectValue + " value");
+				
+				<!--create labels-->
+				svg.append("text")
+				.attr("class", "x label")
+				.attr("text-anchor", "end")
+				.attr("x", width)
+				.attr("y", height - 6)
+				.text("Age Group / Category");
+								
+				console.log(data);
+				
+				
+				
+				return 1;
+			})	
+		}
+		
+
+					
+			</script>
+		
+		</div>	
+		
+			
+			<!--- Graph 2 -->
+		<div id="div2">
+			<script>
+				//https://bl.ocks.org/mbostock/3887051
+				var margin = {top: 20, right: 20, bottom: 30, left: 90},
+					width = 850 - margin.left - margin.right,
+					height = 500 - margin.top - margin.bottom;
+
+				var x0 = d3.scale.ordinal()
+					.rangeRoundBands([0, width], .1);
+
+				var x1 = d3.scale.ordinal();
+
+				var y = d3.scale.linear()
+					.range([height, 0]);
+
+				var color = d3.scale.ordinal()
+					.range(["#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+
+				var xAxis = d3.svg.axis()
+					.scale(x0)
+					.orient("bottom");
+
+				var yAxis = d3.svg.axis()
+					.scale(y)
+					.orient("left");
+
+				var svg = d3.select("#div2").append("svg")
+					.attr("width", width + margin.left + margin.right)
+					.attr("height", height + margin.top + margin.bottom)
+				  .append("g")
+					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+				d3.csv("children.csv", function(error, data) {
+				  if (error) throw error;
+
+				  var ageNames = d3.keys(data[0]).filter(function(key) { return key !== "catagorys"; });
+
+				  data.forEach(function(d) {
+					d.ages = ageNames.map(function(name) { return {name: name, value: +d[name]}; });
+				  });
+
+				  x0.domain(data.map(function(d) { return d.catagorys; }));
+				  x1.domain(ageNames).rangeRoundBands([0, x0.rangeBand()]);
+				  y.domain([0, d3.max(data, function(d) { return d3.max(d.ages, function(d) { return d.value; }); })]);
+
+				  svg.append("g")
+					  .attr("class", "x axis")
+					  .attr("transform", "translate(0," + height + ")")
+					  .call(xAxis);
+
+				  svg.append("g")
+					  .attr("class", "y axis")
+					  .call(yAxis)
+					.append("text")
+					  .attr("transform", "rotate(-90)")
+					  .attr("y", -40)
+					  .attr("dy", ".71em")
+					  .style("text-anchor", "end")
+					  .text("Average People");
+
+				  var state = svg.selectAll(".state")
+					  .data(data)
+					.enter().append("g")
+					  .attr("class", "state")
+					  .attr("transform", function(d) { return "translate(" + x0(d.catagorys) + ",0)"; });
+
+				  state.selectAll("rect")
+					  .data(function(d) { return d.ages; })
+					.enter().append("rect")
+					  .attr("width", x1.rangeBand())
+					  .attr("x", function(d) { return x1(d.name); })
+					  .attr("y", function(d) { return y(d.value); })
+					  .attr("height", function(d) { return height - y(d.value); })
+					  .style("fill", function(d) { return color(d.name); });
+
+				  var legend = svg.selectAll(".legend")
+					  .data(ageNames.slice().reverse())
+					.enter().append("g")
+					  .attr("class", "legend")
+					  .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+				  legend.append("rect")
+					  .attr("x", width + 15)
+					  .attr("width", 18)
+					  .attr("height", 18)
+					  .style("fill", color);
+
+				  legend.append("text")
+					  .attr("x", width + 10 )
+					  .attr("y", 9)
+					  .attr("dy", ".35em")
+					  .style("text-anchor", "end")
+					  .text(function(d) { return d; });
+					  
+					 
+
+				});
+					
+		</script>
+		</div>
+			
+		
+	</div>
+</body>
+
+</html>

@@ -1,34 +1,32 @@
 <?php
-/*
-	$dbuser = "dmills";  
-	$dbpass = "project123";  
-	$dbname = "SSID"; 
-	$db = oci_connect($dbuser, $dbpass, $dbname); 
-	if (!$db)  {
-		echo "An error occurred connecting to the database"; 
-		exit; 
-	}	
+
+    $username = "a9607876_Admin"; 
+    $password = "DJNRAJ302";   
+    $host = "mysql4.000webhost.com";
+    $database="a9607876_302vis";
+    
+    $server = mysql_connect($host, $username, $password);
+    $connection = mysql_select_db($database, $server);
 	
-	$query = "SELECT * FROM BMI_cats_adults";
-			$stmt = oci_parse($db, $query);
-			
-	if(!$stmt) {
-		echo "An error occurred in parsing the sql string.\n";
-		exit;
-		}
 	
-	oci_execute($stmt);
+	$myquery = "SELECT  * FROM  `BMI_cats_adults`";
 	
-	$Underweight = array();
 	
-	for($i = 0; $i < 10; $i++){
-		while(oci_fetch_array($stmt)) {
-					$Underweight[$i]= oci_result($stmt,"UNDERWEIGHT");
-				}
-	}
+    
+    $query = mysql_query($myquery);
+    
+    if ( ! $query ) {
+        echo mysql_error();
+        die;
+    }
+    
+    $data = array();
+    
+    for ($x = 0; $x < mysql_num_rows($query); $x++) {
+        $data[] = mysql_fetch_assoc($query);
+    }		
 	
-	$comma = ',';
-	*/
+    mysql_close($server);
 ?>
 <!DOCTYPE html>
 <html>
@@ -58,7 +56,14 @@
         font-family: Helvetica, Arial, sans-serif;
         font-size:14px;
         text-anchor: middle;
+		
+	
     }
+	
+	.option{
+		font-size: 30px;
+	
+	} <!--Css class for the option-->
     </style>
 	<script src="http://d3js.org/d3.v3.min.js"></script>
 </head>
@@ -70,28 +75,50 @@
 	 <div id="head">
             <div id="maintitle">D3.js Prototype</div>
      </div>
+	  <div id="TEST">
+	  <optgroup id="optgroup">
+	  </optgroup>
+	  </div>
 	  <div id="div1">
 		
 	  
 		<script>
 		<!--Declare array of options -->
-		var data = ["Underweight", "NormalWeight", "OverWeight", "ObeseClassI", "ObeseClassII", "ObeseClassIII", "AllObese"];
-
-			<!--select the body of html and append a select boxx to it an load the documents -->
-			var select = d3.select('body')
-			.append('select')
-			.attr('class','select')
-			.on('change',onchange)
-				
-				
-			var options = select
-			.selectAll('option')
-			.data(data).enter()
-			.append('option')
-			.text(function (d) { return d; });
-					
-		onchange();
 		
+		var data = ["Underweight", "Normal_weight", "Overweight", "Obese_class_1", "Obese_class_2", "Obese_class_3", "All_obese"];
+
+		<!--select the body of html and append a select boxx to it an load the documents -->
+		var select = d3.select('#TEST')<!--Make this name equal the div id you want to place the select box in i used test-->
+		.append('select')
+		.attr('class','select')
+		.on('change',onchange)
+			
+			
+		var options = select
+		.selectAll('option')
+		.data(data).enter()
+		.append('option')
+		.text(function (d) { return d; })
+		.attr("class", "option"); <!-- made a class that is recognisable by css -->
+		
+		
+		var sex = ["Male", "Female", "All"];
+		
+		var select = d3.select('#TEST')<!--Make this name equal the div id you want to place the select box in i used test-->
+		.append('select')
+		.attr('class','gender')
+		.on('change',onchange)
+			
+			
+		var options = select
+		.selectAll('option')
+		.data(sex).enter()
+		.append('option')
+		.text(function (d) { return d; })
+		.attr("class", "option");
+		
+		
+		onchange();		
 		<!--on change do this-->
 		function onchange() {
 				
@@ -101,94 +128,94 @@
 			<!--get the select box value-->
 			selectValue = d3.select('select').property('value');
 			
-			<!--create graph size-->
-			var margin = {top:10, right:0, bottom:60, left:100},
-			width  = 800,
-			height = 500;
+			Gender = d3.select('.gender').property('value');
 			
-			<!--create the svg where the graph wil go-->
-			var svg = d3.select("#div1")
-			.append("svg")
-			.attr("width", "90%")
-			.attr("height", "90%")
-			.attr("viewBox", "0 0 " + width + " " + height);
 			
-			var yScale = d3.scale.linear()
-			.range([height - margin.top - margin.bottom, 0]);
+			var width = 800, height = 500;
+			var margin = {top: 20, right: 20, bottom: 30, left: 50};
 
-			var xScale = d3.scale.ordinal()
-			.rangeRoundBands([0, width - margin.right - margin.left], .1);
+			//data
+			var data = <?php echo json_encode($data)?>;
 			
+			var temp = new Array();
+			for(var i in data){
+				 var id = data[i].Gender;
+				 
+				 if(id == "M" && Gender == "Male")
+				 {
+					 temp.push(data[i]);
+				 }
+				 else if(id == "F" && Gender == "Female"){
+					 
+					 temp.push(data[i]);
+				 }
+				 else if(Gender == "All"){
+					 
+					 temp.push(data[i]);
+				 }
+				 
+			}
+			
+			data = temp;
+			
+
+			//x and y Scales
+			var xScale = d3.scale.ordinal()
+				.rangeRoundBands([0, width], .1);
+
+			var yScale = d3.scale.linear()
+				.range([height, 0]);
+
+			xScale.domain(data.map(function(d) { return d.Age_range; }));
+			yScale.domain([0, d3.max(data, function(d) { return d[selectValue]; })]);
+
+			//x and y Axes
 			var xAxis = d3.svg.axis()
-			.scale(xScale)
-			.orient("bottom");
+				.scale(xScale)
+				.orient("bottom");
 
 			var yAxis = d3.svg.axis()
-			.scale(yScale)
-			.orient("left");
-			
-			<!--retrive csv data-->
-			d3.csv("tab.csv", function(error, data){
-				data = data.map(function(d){ 
-				d[selectValue] = +d[selectValue]; 
-				return d;
-				});
+				.scale(yScale)
+				.orient("left");
 				
-				//yscale's domain is from zero to the maximum "Median Price" in your data
-				yScale.domain([0, d3.max(data, function(d){ return d[selectValue]; })]);
 
-				//xscale is unique values in your data (Age Group, since they are all different)
-				xScale.domain(data.map(function(d){ return d["Category"]; }));
-				
-				<!--create the bars in the svg-->
-				svg.append("g")
-				.attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-				.selectAll(".bar")
+			//create svg container
+			var svg = d3.select("#div1")
+				.append("svg")
+				.attr("width", width + margin.left + margin.right)
+				.attr("height", height + margin.top + margin.bottom)
+				.append("g")
+				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");        
+
+			//create bars
+			svg.selectAll(".bar")
 				.data(data)
 				.enter()
 				.append("rect")
 				.attr("class", "bar")
-				.attr("x", function(d){ return xScale(d["Category"]); })
-				.attr("y", function(d){ return yScale(d[selectValue]); })
-				.attr("height", function(d){ return height - margin.top - margin.bottom - yScale(d[selectValue]); })
-				.attr("width", function(d){ return xScale.rangeBand(); });
+				.attr("x", function(d) { return xScale(d.Age_range); })
+				.attr("width", xScale.rangeBand())
+				.attr("y", function(d) { return yScale(d[selectValue]); })
+				.attr("height", function(d) { return height - yScale(d[selectValue]); });
 
-			
-				//adding y axis to the left of the chart
-				svg.append("g")
-				.attr("class", "y axis")
-				.attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-				.call(yAxis);
-
-				//adding x axis to the bottom of chart
-				svg.append("g")
+			//drawing the x axis on svg
+			svg.append("g")
 				.attr("class", "x axis")
-				.attr("transform", "translate(" + margin.left + "," + (height - margin.bottom) + ")")
+				.attr("transform", "translate(0," + height + ")")
 				.call(xAxis);
-				
-				<!--create labels-->
-				svg.append("text")
-				.attr("class", "y label")
-				.attr("text-anchor", "end")
-				.attr("y", 25)
-				.attr("dy", ".75em")
+
+			//drawing the y axis on svg
+			svg.append("g")
+				.attr("class", "y axis")
+				.call(yAxis)
+				.append("text")
 				.attr("transform", "rotate(-90)")
-				.text(selectValue + " value");
+				.attr("y", -40)
+				.attr("dy", ".71em")
+				.style("text-anchor", "end")
+				.text("People");
 				
-				<!--create labels-->
-				svg.append("text")
-				.attr("class", "x label")
-				.attr("text-anchor", "end")
-				.attr("x", width)
-				.attr("y", height - 6)
-				.text("Age Group / Category");
-								
-				console.log(data);
-				
-				
-				
-				return 1;
-			})	
+				console.log(data)
 		}
 		
 
